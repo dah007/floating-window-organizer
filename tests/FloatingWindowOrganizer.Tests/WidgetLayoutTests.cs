@@ -25,6 +25,33 @@ public class WidgetLayoutTests
         Assert.Equal(expected, WidgetLayout.For(size).Capacity);
     }
 
+    [Theory]
+    [InlineData(WidgetSize.Small)]
+    [InlineData(WidgetSize.Medium)]
+    [InlineData(WidgetSize.Large)]
+    public void HeightFor_Collapsed_IsTitleRowHeightForEverySize(WidgetSize size)
+    {
+        Assert.Equal(WidgetLayout.CollapsedHeight, WidgetLayout.HeightFor(size, isCollapsed: true));
+    }
+
+    [Theory]
+    [InlineData(WidgetSize.Small)]
+    [InlineData(WidgetSize.Medium)]
+    [InlineData(WidgetSize.Large)]
+    public void HeightFor_Expanded_IsFullWidgetHeight(WidgetSize size)
+    {
+        Assert.Equal(WidgetLayout.For(size).Height, WidgetLayout.HeightFor(size, isCollapsed: false));
+    }
+
+    [Theory]
+    [InlineData(WidgetSize.Small)]
+    [InlineData(WidgetSize.Medium)]
+    [InlineData(WidgetSize.Large)]
+    public void CollapsedHeight_IsSmallerThanEveryExpandedSize(WidgetSize size)
+    {
+        Assert.True(WidgetLayout.CollapsedHeight < WidgetLayout.For(size).Height);
+    }
+
     [Fact]
     public void For_UnknownSize_Throws()
     {

@@ -15,4 +15,7 @@ public sealed class FolderWindowSettings
     public double Top { get; set; }
 
     public WidgetSize Size { get; set; } = WidgetSize.Medium;
+
+    /// <summary>True when the widget is collapsed to just its title row.</summary>
+    public bool IsCollapsed { get; set; }
 }

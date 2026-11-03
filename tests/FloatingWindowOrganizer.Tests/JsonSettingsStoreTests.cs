@@ -30,6 +30,7 @@ public sealed class JsonSettingsStoreTests : IDisposable
             Left = 123.5,
             Top = -40,
             Size = WidgetSize.Large,
+            IsCollapsed = true,
         };
         store.Save(new AppSettings { Windows = [original] });
 
@@ -40,6 +41,13 @@ public sealed class JsonSettingsStoreTests : IDisposable
         Assert.Equal(original.Left, loaded.Left);
         Assert.Equal(original.Top, loaded.Top);
         Assert.Equal(original.Size, loaded.Size);
+        Assert.Equal(original.IsCollapsed, loaded.IsCollapsed);
+    }
+
+    [Fact]
+    public void NewWidget_StartsExpanded()
+    {
+        Assert.False(new FolderWindowSettings().IsCollapsed);
     }
 
     [Fact]
@@ -72,6 +80,7 @@ public sealed class JsonSettingsStoreTests : IDisposable
         Assert.Equal(@"C:\Temp", loaded.FolderPath);
         Assert.Equal(10, loaded.Left);
         Assert.Equal(WidgetSize.Medium, loaded.Size);
+        Assert.False(loaded.IsCollapsed);
     }
 
     [Fact]

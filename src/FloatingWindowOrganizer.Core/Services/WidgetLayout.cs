@@ -7,6 +7,12 @@ public static class WidgetLayout
     /// <summary>Corner radius of the widget card, in device-independent units.</summary>
     public const double CornerRadius = 22;
 
+    /// <summary>
+    /// Height of a widget collapsed to its title row: 1 border + 12 padding + 18 title + 12 padding + 1 border.
+    /// Must match the paddings in FolderWindow.xaml.
+    /// </summary>
+    public const double CollapsedHeight = 44;
+
     /// <summary>Sizes based on iOS widget proportions.</summary>
     public static WidgetDimensions For(WidgetSize size) => size switch
     {
@@ -15,6 +21,10 @@ public static class WidgetLayout
         WidgetSize.Large => new WidgetDimensions(364, 382, Columns: 4, Rows: 4),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "Unknown widget size."),
     };
+
+    /// <summary>Window height for a widget size, expanded or collapsed to its title row.</summary>
+    public static double HeightFor(WidgetSize size, bool isCollapsed) =>
+        isCollapsed ? CollapsedHeight : For(size).Height;
 
     /// <summary>
     /// Picks the items to show. If everything fits, all items are shown. Otherwise the

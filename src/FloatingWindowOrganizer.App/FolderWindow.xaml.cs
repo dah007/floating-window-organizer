@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using FloatingWindowOrganizer.App.Interop;
 using FloatingWindowOrganizer.Core.Models;
 using FloatingWindowOrganizer.Core.Services;
@@ -22,7 +23,12 @@ public partial class FolderWindow : Window
     public static readonly DependencyProperty GridRowsProperty = DependencyProperty.Register(
         nameof(GridRows), typeof(int), typeof(FolderWindow), new PropertyMetadata(2));
 
+    private static readonly Duration CollapseAnimationDuration = TimeSpan.FromMilliseconds(200);
+
     private readonly App _host;
+
+    /// <summary>Bumped on every collapse/expand so a superseded animation's Completed is ignored.</summary>
+    private int _collapseAnimationVersion;
 
     /// <summary>Where the left button went down, while we wait to see if it becomes a drag.</summary>
     private Point? _pressPoint;
@@ -64,7 +70,7 @@ public partial class FolderWindow : Window
 
         DesktopAttachment.Attach(Handle);
         WindowEffects.EnableBlurBehind(Handle);
-        UpdateRoundedRegion();
+        UpdateRoundedRegion(Width, Height);
     }
 
     protected override void OnContentRendered(EventArgs e)
@@ -78,17 +84,84 @@ public partial class FolderWindow : Window
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
-        UpdateRoundedRegion();
+        UpdateRoundedRegion(ActualWidth, ActualHeight);
+    }
+
+    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+    {
+        base.OnRenderSizeChanged(sizeInfo);
+
+        // Keeps the rounded clip in step with the size, including every frame of the collapse animation.
+        UpdateRoundedRegion(sizeInfo.NewSize.Width, sizeInfo.NewSize.Height);
     }
 
     private void ApplySize()
     {
+        BeginAnimation(HeightProperty, null); // stop any collapse animation in progress
+        _collapseAnimationVersion++;
+
         var dimensions = WidgetLayout.For(Settings.Size);
         Width = dimensions.Width;
-        Height = dimensions.Height;
+        Height = WidgetLayout.HeightFor(Settings.Size, Settings.IsCollapsed);
         GridColumns = dimensions.Columns;
         GridRows = dimensions.Rows;
-        UpdateRoundedRegion();
+
+        // Content area = expanded height minus the card's border (1 + 1) and padding (12 + 12).
+        ContentPanel.Height = dimensions.Height - WidgetLayout.CollapsedHeight + TitleRow.Height;
+        Tiles.Visibility = Settings.IsCollapsed ? Visibility.Collapsed : Visibility.Visible;
+
+        UpdateRoundedRegion(Width, Height);
+    }
+
+    private void SetCollapsed(bool collapse)
+    {
+        if (Settings.IsCollapsed == collapse)
+        {
+            return;
+        }
+
+        Settings.IsCollapsed = collapse;
+        _host.SaveSettings();
+
+        var version = ++_collapseAnimationVersion;
+        var targetHeight = WidgetLayout.HeightFor(Settings.Size, collapse);
+
+        if (!collapse)
+        {
+            Tiles.Visibility = Visibility.Visible;
+        }
+
+        var animation = new DoubleAnimation(targetHeight, CollapseAnimationDuration)
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        };
+        animation.Completed += (_, _) =>
+        {
+            if (version != _collapseAnimationVersion)
+            {
+                return; // another collapse/expand started meanwhile
+            }
+
+            // Replace the animated value with a real one so later size changes work normally.
+            BeginAnimation(HeightProperty, null);
+            Height = targetHeight;
+
+            if (collapse)
+            {
+                Tiles.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                // Expanding near the bottom of the screen may push the widget off it.
+                KeepOnScreen();
+                if (Left != Settings.Left || Top != Settings.Top)
+                {
+                    SavePosition();
+                }
+            }
+        };
+
+        BeginAnimation(HeightProperty, animation);
     }
 
     private void KeepOnScreen()
@@ -101,7 +174,7 @@ public partial class FolderWindow : Window
         (Left, Top) = WindowPlacement.EnsureVisible(Settings.Left, Settings.Top, Width, Height, desktop);
     }
 
-    private void UpdateRoundedRegion()
+    private void UpdateRoundedRegion(double width, double height)
     {
         var hwnd = Handle;
         if (hwnd == IntPtr.Zero)
@@ -112,8 +185,8 @@ public partial class FolderWindow : Window
         var dpi = VisualTreeHelper.GetDpi(this);
         WindowEffects.SetRoundedRegion(
             hwnd,
-            (int)Math.Ceiling(Width * dpi.DpiScaleX),
-            (int)Math.Ceiling(Height * dpi.DpiScaleY),
+            (int)Math.Ceiling(width * dpi.DpiScaleX),
+            (int)Math.Ceiling(height * dpi.DpiScaleY),
             (int)Math.Round(WidgetLayout.CornerRadius * 2 * dpi.DpiScaleX));
     }
 
@@ -170,7 +243,11 @@ public partial class FolderWindow : Window
         if (e.ClickCount == 2)
         {
             _pressPoint = null;
-            if (TileFrom(e.OriginalSource) is { } tile)
+            if (IsInTitleRow(e.OriginalSource))
+            {
+                SetCollapsed(!Settings.IsCollapsed);
+            }
+            else if (TileFrom(e.OriginalSource) is { } tile)
             {
                 Open(tile.TargetPath, tile.Label);
             }
@@ -214,6 +291,9 @@ public partial class FolderWindow : Window
         Card.ReleaseMouseCapture();
     }
 
+    private bool IsInTitleRow(object source) =>
+        source is DependencyObject element && (element == TitleRow || TitleRow.IsAncestorOf(element));
+
     private static TileViewModel? TileFrom(object source) => source switch
     {
         FrameworkElement element => element.DataContext as TileViewModel,
@@ -251,7 +331,12 @@ public partial class FolderWindow : Window
         SizeSmallItem.IsChecked = Settings.Size == WidgetSize.Small;
         SizeMediumItem.IsChecked = Settings.Size == WidgetSize.Medium;
         SizeLargeItem.IsChecked = Settings.Size == WidgetSize.Large;
+        CollapseItem.Header = Settings.IsCollapsed ? "Expand" : "Collapse";
     }
+
+    private void Refresh_Click(object sender, RoutedEventArgs e) => LoadFolder();
+
+    private void ToggleCollapsed_Click(object sender, RoutedEventArgs e) => SetCollapsed(!Settings.IsCollapsed);
 
     private void OpenInExplorer_Click(object sender, RoutedEventArgs e) =>
         Open(Settings.FolderPath, FolderNameText.Text);

@@ -22,6 +22,9 @@
 
         <Border.ContextMenu>
             <ContextMenu Opened="ContextMenu_Opened">
+                <MenuItem Header="Refresh" Click="Refresh_Click" />
+                <MenuItem x:Name="CollapseItem" Header="Collapse" Click="ToggleCollapsed_Click" />
+                <Separator />
                 <MenuItem Header="Open in File Explorer" Click="OpenInExplorer_Click" />
                 <MenuItem Header="Change folder…" Click="ChangeFolder_Click" />
                 <MenuItem Header="Size">
@@ -37,8 +40,11 @@
             </ContextMenu>
         </Border.ContextMenu>
 
-        <DockPanel>
-            <DockPanel DockPanel.Dock="Top" Height="18" Margin="4,0,4,6">
+        <!-- Fixed to the expanded content height (set in code) and top-aligned, so while the widget
+             collapses the tiles are clipped rather than squashed. -->
+        <DockPanel x:Name="ContentPanel" VerticalAlignment="Top">
+            <!-- Title row. Transparent background so double-clicking anywhere on it collapses/expands. -->
+            <DockPanel x:Name="TitleRow" DockPanel.Dock="Top" Height="18" Margin="4,0,4,6" Background="Transparent">
                 <TextBlock x:Name="ItemCountText"
                            DockPanel.Dock="Right"
                            VerticalAlignment="Center"

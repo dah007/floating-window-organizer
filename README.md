@@ -12,6 +12,8 @@ visible when you press Win+D (Show desktop). Light and dark mode follow Windows.
 | Move a widget | Drag anywhere on it. Its position is saved when you let go. |
 | Open a file or folder | Double-click its icon |
 | See items that don't fit | Double-click the **+N** tile (opens the folder in File Explorer) |
+| Collapse to just the title row, or expand again | Double-click the title row, or right-click > **Collapse** / **Expand** |
+| Re-read the folder after files change | Right-click > **Refresh** |
 | Change folder, size (Small / Medium / Large), add, remove, exit | Right-click the widget |
 
 Widgets don't appear in the taskbar or Alt+Tab. Use **Exit** in the right-click menu to quit.
