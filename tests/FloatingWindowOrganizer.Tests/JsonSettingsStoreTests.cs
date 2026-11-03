@@ -45,6 +45,22 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public void WidgetsHidden_DefaultsToFalse()
+    {
+        Assert.False(new AppSettings().WidgetsHidden);
+    }
+
+    [Fact]
+    public void SaveThenLoad_RoundTripsWidgetsHidden()
+    {
+        var store = new JsonSettingsStore(_temp.Combine("settings.json"));
+
+        store.Save(new AppSettings { WidgetsHidden = true });
+
+        Assert.True(store.Load().WidgetsHidden);
+    }
+
+    [Fact]
     public void NewWidget_StartsExpanded()
     {
         Assert.False(new FolderWindowSettings().IsCollapsed);

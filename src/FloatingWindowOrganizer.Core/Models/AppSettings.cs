@@ -11,4 +11,7 @@ public sealed class AppSettings
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
     public List<FolderWindowSettings> Windows { get; set; } = [];
+
+    /// <summary>True when the user chose "Hide all" from the tray; widgets stay hidden across restarts.</summary>
+    public bool WidgetsHidden { get; set; }
 }

@@ -16,7 +16,16 @@ visible when you press Win+D (Show desktop). Light and dark mode follow Windows.
 | Re-read the folder after files change | Right-click > **Refresh** |
 | Change folder, size (Small / Medium / Large), add, remove, exit | Right-click the widget |
 
-Widgets don't appear in the taskbar or Alt+Tab. Use **Exit** in the right-click menu to quit.
+Widgets don't appear in the taskbar or Alt+Tab.
+
+### Tray icon
+
+The app runs in the notification area (next to the clock), even with no widgets.
+
+| Action | How |
+|---|---|
+| Hide or show every widget | Left-click the tray icon. Hidden widgets stay hidden after a restart. |
+| Add widget, Close widget (pick one), Hide all, Show all, Exit | Right-click the tray icon |
 
 ## Requirements
 

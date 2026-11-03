@@ -4,6 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- Only for the notification-area icon (System.Windows.Forms.NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>FloatingWindowOrganizer.App</RootNamespace>
     <AssemblyName>FloatingWindowOrganizer</AssemblyName>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
@@ -20,6 +22,17 @@
     <DebugType>none</DebugType>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Keep WinForms types out of the global namespace so Application, MessageBox etc. stay WPF's. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Loaded at runtime for the tray icon. -->
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FloatingWindowOrganizer.Core\FloatingWindowOrganizer.Core.csproj" />

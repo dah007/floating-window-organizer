@@ -193,8 +193,7 @@ public partial class FolderWindow : Window
     private void LoadFolder()
     {
         var path = Settings.FolderPath;
-        var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
-        FolderNameText.Text = string.IsNullOrEmpty(name) ? path : name; // drive roots have no file name
+        FolderNameText.Text = FolderDisplayName.For(path);
         Title = FolderNameText.Text;
 
         IReadOnlyList<FolderEntry> entries;
@@ -372,18 +371,13 @@ public partial class FolderWindow : Window
 
     private void AddWidget_Click(object sender, RoutedEventArgs e) => _host.AddWidget();
 
-    private void RemoveWidget_Click(object sender, RoutedEventArgs e)
-    {
-        var answer = MessageBox.Show(
-            $"Remove the \"{FolderNameText.Text}\" widget? The folder itself isn't touched.",
-            "Remove widget",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
+    private void RemoveWidget_Click(object sender, RoutedEventArgs e) => _host.ConfirmAndRemoveWidget(this);
 
-        if (answer == MessageBoxResult.Yes)
-        {
-            _host.RemoveWidget(this);
-        }
+    /// <summary>Shows the widget again after "Hide all", back on the desktop layer.</summary>
+    internal void ShowOnDesktop()
+    {
+        Show();
+        DesktopAttachment.SendToBottom(Handle);
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
