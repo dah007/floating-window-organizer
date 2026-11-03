@@ -29,8 +29,7 @@ public sealed class JsonSettingsStoreTests : IDisposable
             FolderPath = @"C:\Users\me\Documents",
             Left = 123.5,
             Top = -40,
-            Width = 300,
-            Height = 450,
+            Size = WidgetSize.Large,
         };
         store.Save(new AppSettings { Windows = [original] });
 
@@ -40,8 +39,52 @@ public sealed class JsonSettingsStoreTests : IDisposable
         Assert.Equal(original.FolderPath, loaded.FolderPath);
         Assert.Equal(original.Left, loaded.Left);
         Assert.Equal(original.Top, loaded.Top);
-        Assert.Equal(original.Width, loaded.Width);
-        Assert.Equal(original.Height, loaded.Height);
+        Assert.Equal(original.Size, loaded.Size);
+    }
+
+    [Fact]
+    public void NewWidget_DefaultsToMediumSize()
+    {
+        Assert.Equal(WidgetSize.Medium, new FolderWindowSettings().Size);
+    }
+
+    [Fact]
+    public void Save_WritesWidgetSizeAsReadableText()
+    {
+        var path = _temp.Combine("settings.json");
+        var store = new JsonSettingsStore(path);
+
+        store.Save(new AppSettings { Windows = [new FolderWindowSettings { Size = WidgetSize.Small }] });
+
+        Assert.Contains("\"Small\"", File.ReadAllText(path));
+    }
+
+    [Fact]
+    public void Load_IgnoresWidthAndHeightFromOlderSettingsFiles()
+    {
+        var path = _temp.Combine("settings.json");
+        File.WriteAllText(path, """
+            { "SchemaVersion": 1, "Windows": [ { "FolderPath": "C:\\Temp", "Left": 10, "Top": 20, "Width": 300, "Height": 400 } ] }
+            """);
+
+        var loaded = Assert.Single(new JsonSettingsStore(path).Load().Windows);
+
+        Assert.Equal(@"C:\Temp", loaded.FolderPath);
+        Assert.Equal(10, loaded.Left);
+        Assert.Equal(WidgetSize.Medium, loaded.Size);
+    }
+
+    [Fact]
+    public void Load_WhenSizeIsUnknown_TreatsFileAsCorrupt()
+    {
+        var path = _temp.Combine("settings.json");
+        File.WriteAllText(path, """{ "Windows": [ { "Size": "Gigantic" } ] }""");
+        var store = new JsonSettingsStore(path);
+
+        var settings = store.Load();
+
+        Assert.Empty(settings.Windows);
+        Assert.True(File.Exists(store.CorruptBackupPath));
     }
 
     [Fact]

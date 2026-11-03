@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FloatingWindowOrganizer.Core.Models;
 
 namespace FloatingWindowOrganizer.Core.Services;
@@ -11,6 +12,7 @@ public sealed class JsonSettingsStore : ISettingsStore
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
     };
 
     public JsonSettingsStore(string filePath)
