@@ -27,6 +27,13 @@ The app runs in the notification area (next to the clock), even with no widgets.
 | Hide or show every widget | Left-click the tray icon. Hidden widgets stay hidden after a restart. |
 | Add widget, Close widget (pick one), Hide all, Show all, Exit | Right-click the tray icon |
 
+## Design
+
+Colours, type, sizes, components and the app icon are documented in the
+[Floating Window Organizer design system](https://claude.ai/artifact/F66iK2hjPvQfVSmr9UnrDT)
+(Claude Design; ask the maintainer for access). The code is the source of truth: if the two
+disagree, `WidgetPalette.cs`, `WidgetLayout.cs` and `FolderWindow.xaml` win.
+
 ## Requirements
 
 - Windows 11 (22H2 or later)
