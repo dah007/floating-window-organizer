@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>FloatingWindowOrganizer.App</RootNamespace>
+    <AssemblyName>FloatingWindowOrganizer</AssemblyName>
+    <!-- Application.ThemeMode (Fluent theme that follows Windows light/dark + accent) is flagged experimental. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FloatingWindowOrganizer.Core\FloatingWindowOrganizer.Core.csproj" />
+  </ItemGroup>
+
+</Project>

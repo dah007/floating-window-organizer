@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FloatingWindowOrganizer.App/FloatingWindowOrganizer.App.csproj" />
+    <Project Path="src/FloatingWindowOrganizer.Core/FloatingWindowOrganizer.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FloatingWindowOrganizer.Tests/FloatingWindowOrganizer.Tests.csproj" />
+  </Folder>
+</Solution>

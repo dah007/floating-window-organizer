@@ -1,0 +1,52 @@
+<Window x:Class="FloatingWindowOrganizer.App.FolderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Floating folder"
+        Width="320"
+        Height="400"
+        MinWidth="160"
+        MinHeight="120"
+        WindowStyle="None"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Drag handle. Transparent (not null) background so the whole bar receives mouse input. -->
+        <Border x:Name="TitleBar"
+                Grid.Row="0"
+                Padding="10,6"
+                Background="Transparent"
+                Cursor="SizeAll"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right"
+                        Content="✕"
+                        Margin="4,0,0,0"
+                        Padding="8,0"
+                        Cursor="Arrow"
+                        ToolTip="Close"
+                        Click="Close_Click" />
+                <Button DockPanel.Dock="Right"
+                        Content="…"
+                        Padding="8,0"
+                        Cursor="Arrow"
+                        ToolTip="Change folder"
+                        Click="ChangeFolder_Click" />
+                <TextBlock x:Name="FolderNameText"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+
+        <ListBox x:Name="EntriesList"
+                 Grid.Row="1"
+                 BorderThickness="0"
+                 DisplayMemberPath="Name"
+                 MouseDoubleClick="EntriesList_MouseDoubleClick" />
+    </Grid>
+</Window>
