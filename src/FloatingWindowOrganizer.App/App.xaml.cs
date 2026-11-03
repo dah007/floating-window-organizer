@@ -11,12 +11,27 @@ public partial class App : Application
     private const double NewWidgetOffset = 100;
     private const double NewWidgetCascade = 30;
 
+    // Per-user ("Local\") so each signed-in user can run their own copy.
+    private const string SingleInstanceMutexName = @"Local\FloatingWindowOrganizer.SingleInstance";
+
+    private Mutex? _singleInstanceMutex;
+
     private ISettingsStore _store = null!;
     private AppSettings _settings = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Started at sign-in and again from the Start menu would otherwise show every widget twice.
+        _singleInstanceMutex = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var isFirstInstance);
+        if (!isFirstInstance)
+        {
+            _singleInstanceMutex.Dispose();
+            _singleInstanceMutex = null;
+            Shutdown();
+            return;
+        }
 
         WidgetTheme.Apply(Resources);
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
@@ -43,6 +58,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        _singleInstanceMutex?.Dispose();
         base.OnExit(e);
     }
 

@@ -39,7 +39,31 @@ dotnet test
 dotnet run --project src/FloatingWindowOrganizer.App
 ```
 
+## Building the installer
+
+Requires [Inno Setup 6.3+](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
+
+```powershell
+.\build\build-installer.ps1              # version from Directory.Build.props
+.\build\build-installer.ps1 -Version 0.2.0
+```
+
+Output: `artifacts\installer\FloatingWindowOrganizer-Setup-<version>.exe`. It installs for the
+current user only (no admin prompt), bundles the .NET runtime, adds a Start menu shortcut, and
+offers to start the app when you sign in.
+
+### Releasing
+
+Push a version tag and GitHub Actions builds the installer and attaches it to a GitHub Release:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
 ## Settings
 
 Saved as JSON at `%APPDATA%\FloatingWindowOrganizer\settings.json`: one entry per widget
-with its folder, position and size. On first run (no widgets yet) you're asked to pick a folder.
+with its folder, position, size and whether it's collapsed. On first run (no widgets yet) you're asked to pick a folder.
+
+Uninstalling keeps this file, so reinstalling restores your widgets.
