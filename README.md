@@ -5,6 +5,40 @@ showing the contents of a folder you choose as a grid of icons. Widgets live on 
 desktop layer: they sit above the wallpaper and below your app windows, and stay
 visible when you press Win+D (Show desktop). Light and dark mode follow Windows.
 
+Pin your Games folder, your Projects folder, a shared Random folder of odds and ends —
+whatever you'd otherwise dig for in File Explorer — and glance at it right from the
+desktop instead.
+
+## Screenshots
+
+An expanded widget ("Games") showing its grid of icons, and a collapsed widget
+("Random") below it showing just the title row and item count:
+
+![A widget showing a grid of game shortcuts, with a collapsed widget below it](media/1-open-1-minimized.png)
+
+The tray icon's right-click menu:
+
+![Tray menu with Add widget, Close widget, Hide all, Show all, and Exit](media/tray-menu.png)
+
+## Features
+
+- **Live folder view** — each widget mirrors a folder you pick, rendered as a grid of
+  shell icons with their real thumbnails (app icons, image previews, etc.).
+- **Multiple widgets** — pin as many folders as you want, each its own independently
+  positioned and sized card.
+- **Collapsible** — shrink a widget down to just its title bar and item count when you
+  don't need the contents visible.
+- **Overflow tile** — when a folder has more items than fit, a **+N** tile opens the
+  folder in File Explorer instead of truncating silently.
+- **Desktop-layer pinning** — widgets sit above the wallpaper and below normal
+  windows, stay out of the taskbar and Alt+Tab, and remain visible on Show desktop
+  (Win+D).
+- **Light/dark aware** — frosted-glass styling follows the current Windows theme.
+- **Tray-resident** — runs from the notification area; left-click to hide/show all
+  widgets at once, right-click for the full menu (see screenshot above).
+- **Persistent layout** — each widget's folder, position, size, and collapsed state
+  are saved to disk and restored on the next launch.
+
 ## Using it
 
 | Action | How |
