@@ -18,4 +18,13 @@ public sealed class FolderWindowSettings
 
     /// <summary>True when the widget is collapsed to just its title row.</summary>
     public bool IsCollapsed { get; set; }
+
+    /// <summary>Name shown instead of the folder's name; null means use the folder's name.</summary>
+    public string? CustomName { get; set; }
+
+    /// <summary>
+    /// Custom background as "#AARRGGBB" (alpha = opacity of the glass tint); null means follow the
+    /// Windows light/dark theme. An unreadable value is treated as null.
+    /// </summary>
+    public string? BackgroundColor { get; set; }
 }

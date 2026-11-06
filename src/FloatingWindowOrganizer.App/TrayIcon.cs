@@ -90,7 +90,7 @@ internal sealed class TrayIcon : IDisposable
         var widgets = _app.Widgets;
 
         _closeWidgetItem.Items.Clear();
-        var labels = FolderDisplayName.MenuLabels(widgets.Select(widget => widget.Settings.FolderPath).ToList());
+        var labels = WidgetName.MenuLabels(widgets.Select(widget => widget.Settings).ToList());
         for (var i = 0; i < widgets.Count; i++)
         {
             var widget = widgets[i];

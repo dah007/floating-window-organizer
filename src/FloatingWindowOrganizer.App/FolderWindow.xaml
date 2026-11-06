@@ -10,6 +10,26 @@
         ShowInTaskbar="False"
         ShowActivated="False">
 
+    <Window.Resources>
+        <!-- Rename box: fits the 18 px title row and looks like the title, on a faint tile. -->
+        <Style x:Key="TitleEditorStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource WidgetTextBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource WidgetTextBrush}" />
+            <Setter Property="MaxLength" Value="64" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{DynamicResource WidgetTileHoverBrush}" CornerRadius="4" Padding="3,0">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Border x:Name="Card"
             CornerRadius="22"
             Background="{DynamicResource WidgetTintBrush}"
@@ -27,6 +47,8 @@
                 <Separator />
                 <MenuItem Header="Open in File Explorer" Click="OpenInExplorer_Click" />
                 <MenuItem Header="Change folder…" Click="ChangeFolder_Click" />
+                <MenuItem Header="Rename" Click="Rename_Click" />
+                <MenuItem Header="Color…" Click="Color_Click" />
                 <MenuItem Header="Size">
                     <MenuItem x:Name="SizeSmallItem" Header="Small" Tag="Small" IsCheckable="True" Click="Size_Click" />
                     <MenuItem x:Name="SizeMediumItem" Header="Medium" Tag="Medium" IsCheckable="True" Click="Size_Click" />
@@ -50,12 +72,20 @@
                            VerticalAlignment="Center"
                            FontSize="12"
                            Foreground="{DynamicResource WidgetSecondaryTextBrush}" />
-                <TextBlock x:Name="FolderNameText"
-                           VerticalAlignment="Center"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis"
-                           Foreground="{DynamicResource WidgetTextBrush}" />
+                <Grid>
+                    <TextBlock x:Name="FolderNameText"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource WidgetTextBrush}" />
+                    <TextBox x:Name="NameEditor"
+                             Style="{StaticResource TitleEditorStyle}"
+                             Visibility="Collapsed"
+                             Margin="-3,0,8,0"
+                             KeyDown="NameEditor_KeyDown"
+                             LostKeyboardFocus="NameEditor_LostKeyboardFocus" />
+                </Grid>
             </DockPanel>
 
             <ItemsControl x:Name="Tiles" Focusable="False">

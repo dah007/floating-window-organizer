@@ -23,6 +23,22 @@ internal static class DesktopAttachment
         SendToBottom(hwnd);
     }
 
+    /// <summary>
+    /// Lets the window take keyboard focus (for renaming) or stops it again. Widgets are
+    /// normally no-activate so clicking them never pulls them in front of other apps.
+    /// </summary>
+    public static void SetActivatable(IntPtr hwnd, bool activatable)
+    {
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var exStyle = NativeMethods.GetWindowLongPtr(hwnd, NativeMethods.GwlExStyle).ToInt64();
+        exStyle = activatable ? exStyle & ~NativeMethods.WsExNoActivate : exStyle | NativeMethods.WsExNoActivate;
+        NativeMethods.SetWindowLongPtr(hwnd, NativeMethods.GwlExStyle, new IntPtr(exStyle));
+    }
+
     public static void SendToBottom(IntPtr hwnd) =>
         NativeMethods.SetWindowPos(
             hwnd,

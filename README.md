@@ -34,10 +34,13 @@ The tray icon's right-click menu:
   windows, stay out of the taskbar and Alt+Tab, and remain visible on Show desktop
   (Win+D).
 - **Light/dark aware** — frosted-glass styling follows the current Windows theme.
+- **Custom names and colors** — rename any widget, or tint its glass any color with a
+  full-spectrum picker and opacity slider; text switches between black and white to stay
+  readable.
 - **Tray-resident** — runs from the notification area; left-click to hide/show all
   widgets at once, right-click for the full menu (see screenshot above).
-- **Persistent layout** — each widget's folder, position, size, and collapsed state
-  are saved to disk and restored on the next launch.
+- **Persistent layout** — each widget's folder, position, size, collapsed state, name
+  and color are saved to disk and restored on the next launch.
 
 ## Using it
 
@@ -48,6 +51,8 @@ The tray icon's right-click menu:
 | See items that don't fit | Double-click the **+N** tile (opens the folder in File Explorer) |
 | Collapse to just the title row, or expand again | Double-click the title row, or right-click > **Collapse** / **Expand** |
 | Re-read the folder after files change | Right-click > **Refresh** |
+| Rename a widget | Right-click > **Rename**, type, press Enter (Esc cancels). Clear the name to go back to the folder's name. |
+| Give a widget its own color | Right-click > **Color…**: pick a hue, shade and opacity (or type a hex value, or click a preset). **Default** returns to the Windows light/dark color. Text turns black or white automatically to stay readable. |
 | Change folder, size (Small / Medium / Large), add, remove, exit | Right-click the widget |
 
 Widgets don't appear in the taskbar or Alt+Tab.

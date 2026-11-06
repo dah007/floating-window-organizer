@@ -45,6 +45,28 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public void SaveThenLoad_RoundTripsNameAndColor()
+    {
+        var store = new JsonSettingsStore(_temp.Combine("settings.json"));
+        var widget = new FolderWindowSettings { CustomName = "Paperwork", BackgroundColor = "#B8FF9500" };
+
+        store.Save(new AppSettings { Windows = [widget] });
+
+        var loaded = Assert.Single(store.Load().Windows);
+        Assert.Equal("Paperwork", loaded.CustomName);
+        Assert.Equal("#B8FF9500", loaded.BackgroundColor);
+    }
+
+    [Fact]
+    public void NewWidget_HasNoCustomNameOrColor()
+    {
+        var widget = new FolderWindowSettings();
+
+        Assert.Null(widget.CustomName);
+        Assert.Null(widget.BackgroundColor);
+    }
+
+    [Fact]
     public void WidgetsHidden_DefaultsToFalse()
     {
         Assert.False(new AppSettings().WidgetsHidden);
