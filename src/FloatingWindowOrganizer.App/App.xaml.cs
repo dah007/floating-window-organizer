@@ -127,7 +127,7 @@ public partial class App : Application
     internal void ConfirmAndRemoveWidget(FolderWindow widget)
     {
         var answer = MessageBox.Show(
-            $"Remove the \"{FolderDisplayName.For(widget.Settings.FolderPath)}\" widget? The folder itself isn't touched.",
+            $"Remove the \"{WidgetName.For(widget.Settings)}\" widget? The folder itself isn't touched.",
             "Remove widget",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
