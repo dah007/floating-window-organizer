@@ -11,7 +11,7 @@ namespace FloatingWindowOrganizer.App;
 
 /// <summary>
 /// The notification-area icon. Left-click hides or shows every widget; right-click opens a
-/// themed WPF menu: Add widget, Close widget, Hide all, Show all, Exit.
+/// themed WPF menu: Add widget, Close widget, Hide all, Show all, About, Exit.
 /// </summary>
 internal sealed class TrayIcon : IDisposable
 {
@@ -39,6 +39,7 @@ internal sealed class TrayIcon : IDisposable
         _menu.Items.Add(_hideAllItem);
         _menu.Items.Add(_showAllItem);
         _menu.Items.Add(new Separator());
+        _menu.Items.Add(MenuEntry("About", (_, _) => _app.ShowAbout()));
         _menu.Items.Add(MenuEntry("Exit", (_, _) => _app.Shutdown()));
 
         // A menu opened from the tray only closes on an outside click if its window is in the

@@ -21,6 +21,7 @@ public partial class App : Application
     private ISettingsStore _store = null!;
     private AppSettings _settings = null!;
     private TrayIcon? _tray;
+    private AboutWindow? _about;
 
     /// <summary>Every open widget, in the order they were created.</summary>
     internal IReadOnlyList<FolderWindow> Widgets => _widgets;
@@ -141,6 +142,20 @@ public partial class App : Application
         _widgets.Remove(widget);
         SaveSettings();
         widget.Close();
+    }
+
+    /// <summary>Shows the About dialog, or brings it forward if it's already open.</summary>
+    internal void ShowAbout()
+    {
+        if (_about is not null)
+        {
+            _about.Activate();
+            return;
+        }
+
+        _about = new AboutWindow();
+        _about.Closed += (_, _) => _about = null;
+        _about.ShowDialog();
     }
 
     internal void HideAllWidgets()

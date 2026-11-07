@@ -32,6 +32,8 @@
   <ItemGroup>
     <!-- Loaded at runtime for the tray icon. -->
     <Resource Include="Assets\app.ico" />
+    <!-- Shown at 64 px in the About dialog (an .ico would decode at its first, smallest size). -->
+    <Resource Include="Assets\app-256.png" />
   </ItemGroup>
 
   <ItemGroup>
