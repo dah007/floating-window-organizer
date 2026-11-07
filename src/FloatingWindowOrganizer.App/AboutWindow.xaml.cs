@@ -45,11 +45,11 @@ public partial class AboutWindow : Window
     private void ApplyThemeBrushes()
     {
         var light = WidgetTheme.IsWindowsLightTheme();
-        Resources["AboutTextBrush"] = WidgetTheme.ToBrush(light ? 0xFF1C1C1E : 0xFFFFFFFF);
-        Resources["AboutSecondaryTextBrush"] = WidgetTheme.ToBrush(light ? 0xFF5E5E63 : 0xFFAEAEB2);
-        Resources["AboutRowBrush"] = WidgetTheme.ToBrush(light ? 0xB3FFFFFF : 0x14FFFFFF);
-        Resources["AboutRowBorderBrush"] = WidgetTheme.ToBrush(light ? 0x1A000000 : 0x1AFFFFFF);
-        Resources["AboutFooterBrush"] = WidgetTheme.ToBrush(light ? 0x0A000000 : 0x33000000);
+        Resources["AboutTextBrush"] = WidgetTheme.ToBrush(light ? 0xFF1C1C1Eu : 0xFFFFFFFFu);
+        Resources["AboutSecondaryTextBrush"] = WidgetTheme.ToBrush(light ? 0xFF5E5E63u : 0xFFAEAEB2u);
+        Resources["AboutRowBrush"] = WidgetTheme.ToBrush(light ? 0xB3FFFFFFu : 0x14FFFFFFu);
+        Resources["AboutRowBorderBrush"] = WidgetTheme.ToBrush(light ? 0x1A000000u : 0x1AFFFFFFu);
+        Resources["AboutFooterBrush"] = WidgetTheme.ToBrush(light ? 0x0A000000u : 0x33000000u);
     }
 
     private void Link_Click(object sender, RoutedEventArgs e)
