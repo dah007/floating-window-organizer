@@ -492,5 +492,7 @@ public partial class FolderWindow : Window
         DesktopAttachment.SendToBottom(Handle);
     }
 
+    private void About_Click(object sender, RoutedEventArgs e) => _host.ShowAbout();
+
     private void Exit_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 }

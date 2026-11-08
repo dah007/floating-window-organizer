@@ -53,6 +53,7 @@ The tray icon's right-click menu:
 | Re-read the folder after files change | Right-click > **Refresh** |
 | Rename a widget | Right-click > **Rename**, type, press Enter (Esc cancels). Clear the name to go back to the folder's name. |
 | Give a widget its own color | Right-click > **Color…**: pick a hue, shade and opacity (or type a hex value, or click a preset). **Default** returns to the Windows light/dark color. Text turns black or white automatically to stay readable. |
+| See the version, or find the author's GitHub, LinkedIn and Buy Me a Coffee pages | Right-click a widget or the tray icon > **About** |
 | Change folder, size (Small / Medium / Large), add, remove, exit | Right-click the widget |
 
 Widgets don't appear in the taskbar or Alt+Tab.
@@ -64,7 +65,7 @@ The app runs in the notification area (next to the clock), even with no widgets.
 | Action | How |
 |---|---|
 | Hide or show every widget | Left-click the tray icon. Hidden widgets stay hidden after a restart. |
-| Add widget, Close widget (pick one), Hide all, Show all, Exit | Right-click the tray icon |
+| Add widget, Close widget (pick one), Hide all, Show all, About, Exit | Right-click the tray icon |
 
 ## Design
 

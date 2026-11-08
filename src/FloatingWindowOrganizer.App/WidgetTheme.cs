@@ -26,15 +26,14 @@ internal static class WidgetTheme
     ];
 
     /// <summary>Applies the palette for the current Windows light/dark setting.</summary>
-    public static void Apply(ResourceDictionary resources)
-    {
-        object? rawValue;
-        using (var key = Registry.CurrentUser.OpenSubKey(WindowsTheme.PersonalizeKeyPath))
-        {
-            rawValue = key?.GetValue(WindowsTheme.AppsUseLightThemeValueName);
-        }
+    public static void Apply(ResourceDictionary resources) =>
+        Apply(resources, WindowsTheme.PaletteFor(IsWindowsLightTheme()));
 
-        Apply(resources, WindowsTheme.PaletteFor(WindowsTheme.IsLightTheme(rawValue)));
+    /// <summary>True when Windows apps are set to light mode (the default when the setting is missing).</summary>
+    public static bool IsWindowsLightTheme()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(WindowsTheme.PersonalizeKeyPath);
+        return WindowsTheme.IsLightTheme(key?.GetValue(WindowsTheme.AppsUseLightThemeValueName));
     }
 
     public static void Apply(ResourceDictionary resources, WidgetPalette palette)
