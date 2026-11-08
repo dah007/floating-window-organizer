@@ -33,6 +33,9 @@ public partial class FolderWindow : Window
     /// <summary>Where the left button went down, while we wait to see if it becomes a drag.</summary>
     private Point? _pressPoint;
 
+    /// <summary>True while the title row is a text box.</summary>
+    private bool _isRenaming;
+
     public FolderWindow(FolderWindowSettings settings, App host)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -45,8 +48,13 @@ public partial class FolderWindow : Window
 
         ApplySize();
         KeepOnScreen();
+        ApplyColor(SavedColor);
         LoadFolder();
     }
+
+    /// <summary>The widget's saved custom colour, or null to follow the Windows theme.</summary>
+    private uint? SavedColor =>
+        ColorMath.TryParseHex(Settings.BackgroundColor, out var argb, out _) ? argb : null;
 
     public FolderWindowSettings Settings { get; }
 
@@ -193,7 +201,8 @@ public partial class FolderWindow : Window
     private void LoadFolder()
     {
         var path = Settings.FolderPath;
-        FolderNameText.Text = FolderDisplayName.For(path);
+        FolderNameText.Text = WidgetName.For(Settings);
+        FolderNameText.ToolTip = path;
         Title = FolderNameText.Text;
 
         IReadOnlyList<FolderEntry> entries;
@@ -238,6 +247,9 @@ public partial class FolderWindow : Window
     private void Card_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+
+        // A click on the card (not in the rename box, which handles its own clicks) finishes renaming.
+        EndRename(save: true);
 
         if (e.ClickCount == 2)
         {
@@ -334,6 +346,106 @@ public partial class FolderWindow : Window
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => LoadFolder();
+
+    // ---- Rename (in place, in the title row) ----
+
+    private void Rename_Click(object sender, RoutedEventArgs e) => BeginRename();
+
+    private void BeginRename()
+    {
+        if (_isRenaming)
+        {
+            return;
+        }
+
+        _isRenaming = true;
+        NameEditor.Text = WidgetName.For(Settings);
+        FolderNameText.Visibility = Visibility.Hidden;
+        NameEditor.Visibility = Visibility.Visible;
+
+        // The widget normally never takes focus; it must, briefly, to receive typing.
+        DesktopAttachment.SetActivatable(Handle, true);
+        Activate();
+        NameEditor.Focus();
+        Keyboard.Focus(NameEditor);
+        NameEditor.SelectAll();
+    }
+
+    private void EndRename(bool save)
+    {
+        if (!_isRenaming)
+        {
+            return;
+        }
+
+        _isRenaming = false;
+        if (save)
+        {
+            Settings.CustomName = WidgetName.NormalizeCustomName(NameEditor.Text, Settings.FolderPath);
+            _host.SaveSettings();
+        }
+
+        NameEditor.Visibility = Visibility.Collapsed;
+        FolderNameText.Visibility = Visibility.Visible;
+        FolderNameText.Text = WidgetName.For(Settings);
+        Title = FolderNameText.Text;
+
+        DesktopAttachment.SetActivatable(Handle, false);
+        DesktopAttachment.SendToBottom(Handle);
+    }
+
+    private void NameEditor_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            EndRename(save: true);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            EndRename(save: false);
+            e.Handled = true;
+        }
+    }
+
+    // Clicking anywhere else, or switching apps, keeps what was typed.
+    private void NameEditor_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => EndRename(save: true);
+
+    protected override void OnDeactivated(EventArgs e)
+    {
+        base.OnDeactivated(e);
+        EndRename(save: true);
+    }
+
+    // ---- Background colour ----
+
+    private void Color_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new ColorPickerWindow(SavedColor);
+        picker.ColorChanged += (_, _) => ApplyColor(picker.SelectedColor); // live preview
+
+        if (picker.ShowDialog() == true)
+        {
+            Settings.BackgroundColor = picker.SelectedColor is { } argb ? ColorMath.ToArgbHex(argb) : null;
+            _host.SaveSettings();
+        }
+
+        ApplyColor(SavedColor); // the saved choice, or back to it after Cancel
+        DesktopAttachment.SendToBottom(Handle);
+    }
+
+    /// <summary>A custom colour gets this window's own brushes; null falls back to the theme's.</summary>
+    private void ApplyColor(uint? argb)
+    {
+        if (argb is { } color)
+        {
+            WidgetTheme.Apply(Resources, WidgetPalette.ForBackground(color));
+        }
+        else
+        {
+            WidgetTheme.Clear(Resources);
+        }
+    }
 
     private void ToggleCollapsed_Click(object sender, RoutedEventArgs e) => SetCollapsed(!Settings.IsCollapsed);
 

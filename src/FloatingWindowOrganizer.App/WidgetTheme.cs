@@ -1,13 +1,15 @@
 using System.Windows;
 using System.Windows.Media;
+using FloatingWindowOrganizer.Core.Models;
 using FloatingWindowOrganizer.Core.Services;
 using Microsoft.Win32;
 
 namespace FloatingWindowOrganizer.App;
 
 /// <summary>
-/// Publishes the widget brushes as app resources, picked from the current Windows light/dark setting.
-/// XAML uses them through DynamicResource, so a theme change updates every widget at once.
+/// Publishes the widget brushes as resources. App-level resources follow the Windows light/dark
+/// setting; a widget with a custom colour puts its own brushes in its window's resources, which
+/// DynamicResource lookups find first.
 /// </summary>
 internal static class WidgetTheme
 {
@@ -18,16 +20,25 @@ internal static class WidgetTheme
     public const string TileBrushKey = "WidgetTileBrush";
     public const string TileHoverBrushKey = "WidgetTileHoverBrush";
 
+    private static readonly string[] Keys =
+    [
+        TintBrushKey, BorderBrushKey, TextBrushKey, SecondaryTextBrushKey, TileBrushKey, TileHoverBrushKey,
+    ];
+
+    /// <summary>Applies the palette for the current Windows light/dark setting.</summary>
     public static void Apply(ResourceDictionary resources)
     {
-        object? rawValue = null;
+        object? rawValue;
         using (var key = Registry.CurrentUser.OpenSubKey(WindowsTheme.PersonalizeKeyPath))
         {
             rawValue = key?.GetValue(WindowsTheme.AppsUseLightThemeValueName);
         }
 
-        var palette = WindowsTheme.PaletteFor(WindowsTheme.IsLightTheme(rawValue));
+        Apply(resources, WindowsTheme.PaletteFor(WindowsTheme.IsLightTheme(rawValue)));
+    }
 
+    public static void Apply(ResourceDictionary resources, WidgetPalette palette)
+    {
         resources[TintBrushKey] = ToBrush(palette.Tint);
         resources[BorderBrushKey] = ToBrush(palette.Border);
         resources[TextBrushKey] = ToBrush(palette.Text);
@@ -36,10 +47,19 @@ internal static class WidgetTheme
         resources[TileHoverBrushKey] = ToBrush(palette.TileHover);
     }
 
-    private static SolidColorBrush ToBrush(uint argb)
+    /// <summary>Removes widget brushes so lookups fall back to the app-level (theme) ones.</summary>
+    public static void Clear(ResourceDictionary resources)
     {
-        var brush = new SolidColorBrush(Color.FromArgb(
-            (byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb));
+        foreach (var key in Keys)
+        {
+            resources.Remove(key);
+        }
+    }
+
+    public static SolidColorBrush ToBrush(uint argb)
+    {
+        var (a, r, g, b) = ColorMath.Split(argb);
+        var brush = new SolidColorBrush(Color.FromArgb(a, r, g, b));
         brush.Freeze();
         return brush;
     }

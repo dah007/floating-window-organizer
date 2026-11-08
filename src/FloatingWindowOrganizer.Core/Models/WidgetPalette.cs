@@ -1,3 +1,5 @@
+using FloatingWindowOrganizer.Core.Services;
+
 namespace FloatingWindowOrganizer.Core.Models;
 
 /// <summary>
@@ -19,6 +21,13 @@ public sealed record WidgetPalette(
         SecondaryText: 0xFF6E6E73,
         Tile: 0x73FFFFFF,
         TileHover: 0xB3FFFFFF);
+
+    /// <summary>
+    /// Palette for a widget with a custom background: the colour becomes the tint, and text, border
+    /// and tiles come from whichever theme palette reads better on it (dark text means the light palette).
+    /// </summary>
+    public static WidgetPalette ForBackground(uint argb) =>
+        (ColorMath.PrefersDarkText(argb) ? Light : Dark) with { Tint = argb };
 
     public static WidgetPalette Dark { get; } = new(
         Tint: 0xB81C1C1E,
