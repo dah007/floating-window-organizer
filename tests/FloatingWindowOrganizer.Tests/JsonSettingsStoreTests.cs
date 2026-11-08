@@ -1,5 +1,6 @@
 using FloatingWindowOrganizer.Core.Models;
 using FloatingWindowOrganizer.Core.Services;
+using FloatingWindowOrganizer.TestSupport;
 
 namespace FloatingWindowOrganizer.Tests;
 

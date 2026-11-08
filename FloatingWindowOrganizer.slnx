@@ -5,5 +5,9 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FloatingWindowOrganizer.Tests/FloatingWindowOrganizer.Tests.csproj" />
+    <Project Path="tests/FloatingWindowOrganizer.AppTests/FloatingWindowOrganizer.AppTests.csproj" />
+    <Project Path="tests/FloatingWindowOrganizer.TestSupport/FloatingWindowOrganizer.TestSupport.csproj" />
+    <Project Path="tests/FloatingWindowOrganizer.Smoke/FloatingWindowOrganizer.Smoke.csproj" />
+    <Project Path="tests/FloatingWindowOrganizer.E2E/FloatingWindowOrganizer.E2E.csproj" />
   </Folder>
 </Solution>

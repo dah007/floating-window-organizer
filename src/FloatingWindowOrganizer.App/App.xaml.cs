@@ -11,8 +11,12 @@ public partial class App : Application
     private const double NewWidgetOffset = 100;
     private const double NewWidgetCascade = 30;
 
-    // Per-user ("Local\") so each signed-in user can run their own copy.
-    private const string SingleInstanceMutexName = @"Local\FloatingWindowOrganizer.SingleInstance";
+    // Per-user ("Local\") so each signed-in user can run their own copy. Suffixed with
+    // FWO_INSTANCE_ID when set, so automated tests never collide with a real running instance.
+    private static string SingleInstanceMutexName =>
+        Environment.GetEnvironmentVariable("FWO_INSTANCE_ID") is { Length: > 0 } id
+            ? @$"Local\FloatingWindowOrganizer.SingleInstance.{id}"
+            : @"Local\FloatingWindowOrganizer.SingleInstance";
 
     private Mutex? _singleInstanceMutex;
 

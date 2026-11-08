@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FloatingWindowOrganizer.Core\FloatingWindowOrganizer.Core.csproj" />
+    <ProjectReference Include="..\FloatingWindowOrganizer.TestSupport\FloatingWindowOrganizer.TestSupport.csproj" />
   </ItemGroup>
 
 </Project>

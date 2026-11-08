@@ -86,14 +86,34 @@ disagree, `WidgetPalette.cs`, `WidgetLayout.cs` and `FolderWindow.xaml` win.
 | `src/FloatingWindowOrganizer.App` | `net10.0-windows` (WPF) | Widget windows, desktop pinning, blur, shell icons |
 | `src/FloatingWindowOrganizer.Core` | `net10.0` | Settings, widget sizes and layout, theme palette, folder listing |
 | `tests/FloatingWindowOrganizer.Tests` | `net10.0` (xUnit) | Unit tests for Core |
+| `tests/FloatingWindowOrganizer.AppTests` | `net10.0-windows` (xUnit) | Unit tests for App-layer pure logic (`WidgetTheme`) |
+| `tests/FloatingWindowOrganizer.TestSupport` | `net10.0` | Shared helpers for Smoke/E2E: launching an isolated app instance, locating the built exe |
+| `tests/FloatingWindowOrganizer.Smoke` | `net10.0` (xUnit) | Launches the real built app; checks it starts/exits without crashing |
+| `tests/FloatingWindowOrganizer.E2E` | `net10.0-windows` (xUnit, FlaUI) | Drives the real widget window and color picker via UI Automation |
 
 ## Build, test, run
 
 ```powershell
 dotnet build
-dotnet test
+dotnet test                                                    # unit tests only (fast)
+dotnet test tests\FloatingWindowOrganizer.Smoke                # launches the real app
+dotnet test tests\FloatingWindowOrganizer.E2E                  # drives the real app's UI
 dotnet run --project src/FloatingWindowOrganizer.App
 ```
+
+### Testing
+
+Smoke and E2E tests launch the real `FloatingWindowOrganizer.exe`, so build the solution first.
+Each test gets its own isolated settings folder and single-instance mutex via two environment
+variables the app honors only when set — `FWO_SETTINGS_DIR` (overrides where `settings.json` is
+read/written) and `FWO_INSTANCE_ID` (suffixes the single-instance mutex name) — so tests never
+touch your real `%APPDATA%\FloatingWindowOrganizer\settings.json` or collide with an instance of
+the app you already have running. Both are no-ops for a normal launch.
+
+E2E automates the widget window and color picker directly; driving the system tray's
+notification-area menu is intentionally out of scope (too inconsistent across machines/CI
+runners to automate reliably), as is the native folder-picker dialog used by "Add widget" and
+"Change folder".
 
 ## Building the installer
 

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FloatingWindowOrganizer.Core\FloatingWindowOrganizer.Core.csproj" />
+    <ProjectReference Include="..\FloatingWindowOrganizer.TestSupport\FloatingWindowOrganizer.TestSupport.csproj" />
+  </ItemGroup>
+
+  <!--
+    No ProjectReference to the App project: MSBuild refuses a build-order-only reference
+    (ReferenceOutputAssembly="false") from a net10.0 project to App's net10.0-windows. Build
+    FloatingWindowOrganizer.slnx (or the App project) first; AppExeLocator gives a clear error
+    if FloatingWindowOrganizer.exe isn't found yet.
+  -->
+
+
+</Project>

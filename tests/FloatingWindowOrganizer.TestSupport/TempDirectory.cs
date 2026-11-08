@@ -1,7 +1,7 @@
-namespace FloatingWindowOrganizer.Tests;
+namespace FloatingWindowOrganizer.TestSupport;
 
 /// <summary>Creates a unique temp folder for a test and deletes it afterwards.</summary>
-internal sealed class TempDirectory : IDisposable
+public sealed class TempDirectory : IDisposable
 {
     public TempDirectory()
     {

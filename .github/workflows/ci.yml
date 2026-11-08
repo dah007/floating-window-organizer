@@ -18,8 +18,8 @@ jobs:
       - name: Build
         run: dotnet build FloatingWindowOrganizer.slnx -c Release
 
-      - name: Test
-        run: dotnet test tests/FloatingWindowOrganizer.Tests/FloatingWindowOrganizer.Tests.csproj -c Release --no-build --logger trx --results-directory TestResults
+      - name: Unit tests
+        run: dotnet test FloatingWindowOrganizer.slnx -c Release --no-build --filter "Category!=Smoke&Category!=E2E" --logger trx --results-directory TestResults
 
       - name: Upload test results
         if: always()
@@ -27,3 +27,47 @@ jobs:
         with:
           name: test-results
           path: TestResults
+
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build FloatingWindowOrganizer.slnx -c Release
+
+      - name: Smoke tests
+        run: dotnet test tests/FloatingWindowOrganizer.Smoke/FloatingWindowOrganizer.Smoke.csproj -c Release --no-build --logger trx --results-directory TestResults-Smoke
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-smoke
+          path: TestResults-Smoke
+
+  e2e:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build FloatingWindowOrganizer.slnx -c Release
+
+      - name: End-to-end tests
+        run: dotnet test tests/FloatingWindowOrganizer.E2E/FloatingWindowOrganizer.E2E.csproj -c Release --no-build --logger trx --results-directory TestResults-E2E
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-e2e
+          path: TestResults-E2E
