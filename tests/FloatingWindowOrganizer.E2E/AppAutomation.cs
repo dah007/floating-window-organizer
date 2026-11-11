@@ -14,10 +14,28 @@ internal static class AppAutomation
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
+    /// <summary>
+    /// Finds the widget's top-level window via UIA. The widget is a WS_EX_TOOLWINDOW owned by the
+    /// desktop (see DesktopAttachment), so Process.MainWindowHandle — which FlaUI's
+    /// Application.GetMainWindow relies on — stays 0 forever; search the desktop's children instead.
+    /// </summary>
     public static Window AttachMainWindow(Process process, UIA3Automation automation)
     {
-        var app = Application.Attach(process.Id);
-        return app.GetMainWindow(automation, DefaultTimeout)
+        var window = Retry.WhileNull(
+            () =>
+            {
+                if (process.HasExited)
+                {
+                    throw new InvalidOperationException(
+                        $"The app exited (code {process.ExitCode}) before its widget window appeared.");
+                }
+
+                return automation.GetDesktop().FindFirstChild(cf =>
+                    cf.ByProcessId(process.Id).And(cf.ByControlType(ControlType.Window)));
+            },
+            DefaultTimeout).Result;
+
+        return window?.AsWindow()
             ?? throw new InvalidOperationException("The widget window never appeared.");
     }
 
