@@ -97,6 +97,9 @@ public sealed class WidgetTileTests
             "The widget's tiles should be hidden once collapsed. Window under the click point: " +
             AppAutomation.DescribeClickTarget(titleText));
 
+        // Wait out the system double-click time, or Windows counts the next two clicks as the
+        // third and fourth of the previous sequence rather than a new double-click.
+        Thread.Sleep(1000);
         AppAutomation.RaiseForInput(window);
         titleText.DoubleClick();
         var expanded = Retry.WhileNull(

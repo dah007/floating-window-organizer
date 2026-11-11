@@ -102,24 +102,31 @@ internal static class AppAutomation
         }
     }
 
-    /// <summary>Right-clicks the element, waits for the popup ContextMenu, and clicks the item
-    /// with the given header text.</summary>
+    /// <summary>
+    /// Right-clicks the element, waits for the popup ContextMenu, and clicks the item with the
+    /// given header text. The popup is found as a new top-level window of the app's process (by
+    /// HWND), since where UIA places a desktop-owned widget's popup in its tree varies by machine.
+    /// </summary>
     public static void ClickContextMenuItem(AutomationElement target, UIA3Automation automation, string header)
     {
+        var processId = target.Properties.ProcessId.Value;
+        var before = ProcessWindows.FindVisibleWpfWindows(processId).Select(w => w.Handle).ToHashSet();
+
         RaiseForInput(target);
         target.RightClick();
 
-        var menu = Retry.WhileNull(
-            () => automation.GetDesktop().FindFirstChild(cf => cf.ByControlType(ControlType.Menu)),
+        var item = Retry.WhileNull(
+            () => ProcessWindows.FindVisibleWpfWindows(processId)
+                .Where(w => !before.Contains(w.Handle))
+                .Select(w => automation.FromHandle(w.Handle).FindFirstDescendant(cf =>
+                    cf.ByControlType(ControlType.MenuItem).And(cf.ByName(header))))
+                .FirstOrDefault(found => found is not null),
             DefaultTimeout,
             ignoreException: true).Result
             ?? throw new InvalidOperationException(
-                "The context menu never appeared. Window under the click point: " + DescribeClickTarget(target));
-
-        var item = Retry.WhileNull(
-            () => menu.FindFirstDescendant(cf => cf.ByName(header)),
-            TimeSpan.FromSeconds(2)).Result
-            ?? throw new InvalidOperationException($"Context menu item \"{header}\" wasn't found.");
+                $"Context menu item \"{header}\" never appeared. Window under the click point: " +
+                DescribeClickTarget(target) + ". Windows owned by the app process: " +
+                string.Join("; ", ProcessWindows.List(processId)));
 
         item.Click();
     }
