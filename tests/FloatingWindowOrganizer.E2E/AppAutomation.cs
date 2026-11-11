@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
@@ -15,28 +16,58 @@ internal static class AppAutomation
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// Finds the widget's top-level window via UIA. The widget is a WS_EX_TOOLWINDOW owned by the
-    /// desktop (see DesktopAttachment), so Process.MainWindowHandle — which FlaUI's
-    /// Application.GetMainWindow relies on — stays 0 forever; search the desktop's children instead.
+    /// Finds the widget's window. The widget is a WS_EX_TOOLWINDOW owned by the desktop (see
+    /// DesktopAttachment), so Process.MainWindowHandle — which FlaUI's Application.GetMainWindow
+    /// relies on — stays 0 forever, and where UIA places a Progman-owned window in its tree varies
+    /// by machine. So find the HWND with EnumWindows and wrap it with UIA directly.
     /// </summary>
-    public static Window AttachMainWindow(Process process, UIA3Automation automation)
+    public static Window AttachMainWindow(Process process, UIA3Automation automation) =>
+        FindProcessWindow(process, automation, "widget window", DefaultTimeout, _ => true);
+
+    /// <summary>Finds a visible window of the app with the given title (e.g. a dialog).</summary>
+    public static Window FindWindowByTitle(Process process, UIA3Automation automation, string title, TimeSpan timeout) =>
+        FindProcessWindow(process, automation, $"\"{title}\" window", timeout, w => w.Title == title);
+
+    private static Window FindProcessWindow(
+        Process process,
+        UIA3Automation automation,
+        string description,
+        TimeSpan timeout,
+        Func<ProcessWindows.Info, bool> match)
     {
-        var window = Retry.WhileNull(
-            () =>
+        var deadline = DateTime.UtcNow + timeout;
+        Exception? lastError = null;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            if (process.HasExited)
             {
-                if (process.HasExited)
+                throw new InvalidOperationException(
+                    $"The app exited (code {process.ExitCode}) before its {description} appeared.");
+            }
+
+            var hwnd = ProcessWindows.FindVisibleWpfWindows(process.Id).FirstOrDefault(match);
+            if (hwnd is not null)
+            {
+                try
                 {
-                    throw new InvalidOperationException(
-                        $"The app exited (code {process.ExitCode}) before its widget window appeared.");
+                    // UIA can briefly refuse a window that's still initializing; retry until the deadline.
+                    return automation.FromHandle(hwnd.Handle).AsWindow();
                 }
+                catch (Exception ex) when (ex is COMException or System.ComponentModel.Win32Exception)
+                {
+                    lastError = ex;
+                }
+            }
 
-                return automation.GetDesktop().FindFirstChild(cf =>
-                    cf.ByProcessId(process.Id).And(cf.ByControlType(ControlType.Window)));
-            },
-            DefaultTimeout).Result;
+            Thread.Sleep(200);
+        }
 
-        return window?.AsWindow()
-            ?? throw new InvalidOperationException("The widget window never appeared.");
+        var seen = ProcessWindows.List(process.Id);
+        throw new InvalidOperationException(
+            $"The {description} never appeared. Windows owned by the app process: " +
+            (seen.Count == 0 ? "(none)" : string.Join("; ", seen)),
+            lastError);
     }
 
     /// <summary>Right-clicks the element, waits for the popup ContextMenu, and clicks the item
@@ -47,7 +78,8 @@ internal static class AppAutomation
 
         var menu = Retry.WhileNull(
             () => automation.GetDesktop().FindFirstChild(cf => cf.ByControlType(ControlType.Menu)),
-            DefaultTimeout).Result
+            DefaultTimeout,
+            ignoreException: true).Result
             ?? throw new InvalidOperationException("The context menu never appeared.");
 
         var item = Retry.WhileNull(
