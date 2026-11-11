@@ -87,12 +87,20 @@ public sealed class WidgetTileTests
             cf.ByControlType(ControlType.Text).And(cf.ByName(displayName)));
         Assert.NotNull(titleText);
 
+        AppAutomation.RaiseForInput(window);
         titleText!.DoubleClick();
         var collapsed = Retry.WhileTrue(
             () => window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Text).And(cf.ByName("a.txt"))) is not null,
             TimeSpan.FromSeconds(2)).Success;
-        Assert.True(collapsed, "The widget's tiles should be hidden once collapsed.");
+        Assert.True(
+            collapsed,
+            "The widget's tiles should be hidden once collapsed. Window under the click point: " +
+            AppAutomation.DescribeClickTarget(titleText));
 
+        // Wait out the system double-click time, or Windows counts the next two clicks as the
+        // third and fourth of the previous sequence rather than a new double-click.
+        Thread.Sleep(1000);
+        AppAutomation.RaiseForInput(window);
         titleText.DoubleClick();
         var expanded = Retry.WhileNull(
             () => window.FindFirstDescendant(cf => cf.ByControlType(ControlType.Text).And(cf.ByName("a.txt"))),

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
@@ -14,28 +15,118 @@ internal static class AppAutomation
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
-    public static Window AttachMainWindow(Process process, UIA3Automation automation)
+    /// <summary>
+    /// Finds the widget's window. The widget is a WS_EX_TOOLWINDOW owned by the desktop (see
+    /// DesktopAttachment), so Process.MainWindowHandle — which FlaUI's Application.GetMainWindow
+    /// relies on — stays 0 forever, and where UIA places a Progman-owned window in its tree varies
+    /// by machine. So find the HWND with EnumWindows and wrap it with UIA directly.
+    /// </summary>
+    public static Window AttachMainWindow(Process process, UIA3Automation automation) =>
+        FindProcessWindow(process, automation, "widget window", DefaultTimeout, _ => true);
+
+    /// <summary>Finds a visible window of the app with the given title (e.g. a dialog).</summary>
+    public static Window FindWindowByTitle(Process process, UIA3Automation automation, string title, TimeSpan timeout) =>
+        FindProcessWindow(process, automation, $"\"{title}\" window", timeout, w => w.Title == title);
+
+    private static Window FindProcessWindow(
+        Process process,
+        UIA3Automation automation,
+        string description,
+        TimeSpan timeout,
+        Func<ProcessWindows.Info, bool> match)
     {
-        var app = Application.Attach(process.Id);
-        return app.GetMainWindow(automation, DefaultTimeout)
-            ?? throw new InvalidOperationException("The widget window never appeared.");
+        var deadline = DateTime.UtcNow + timeout;
+        Exception? lastError = null;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            if (process.HasExited)
+            {
+                throw new InvalidOperationException(
+                    $"The app exited (code {process.ExitCode}) before its {description} appeared.");
+            }
+
+            var hwnd = ProcessWindows.FindVisibleWpfWindows(process.Id).FirstOrDefault(match);
+            if (hwnd is not null)
+            {
+                try
+                {
+                    // UIA can briefly refuse a window that's still initializing; retry until the deadline.
+                    return automation.FromHandle(hwnd.Handle).AsWindow();
+                }
+                catch (Exception ex) when (ex is COMException or System.ComponentModel.Win32Exception)
+                {
+                    lastError = ex;
+                }
+            }
+
+            Thread.Sleep(200);
+        }
+
+        var seen = ProcessWindows.List(process.Id);
+        throw new InvalidOperationException(
+            $"The {description} never appeared. Windows owned by the app process: " +
+            (seen.Count == 0 ? "(none)" : string.Join("; ", seen)),
+            lastError);
     }
 
-    /// <summary>Right-clicks the element, waits for the popup ContextMenu, and clicks the item
-    /// with the given header text.</summary>
+    /// <summary>
+    /// Raises the window containing <paramref name="element"/> above everything (without
+    /// activating it) so synthetic mouse input reaches it. Call before clicking a widget.
+    /// </summary>
+    public static void RaiseForInput(AutomationElement element)
+    {
+        for (var current = element; current is not null; current = current.Parent)
+        {
+            var hwnd = current.Properties.NativeWindowHandle.ValueOrDefault;
+            if (hwnd != IntPtr.Zero)
+            {
+                ProcessWindows.RaiseToTop(hwnd);
+                Thread.Sleep(100);
+                return;
+            }
+        }
+    }
+
+    /// <summary>Which window actually sits under the element's click point (for failure messages).</summary>
+    public static string DescribeClickTarget(AutomationElement element)
+    {
+        try
+        {
+            var point = element.GetClickablePoint();
+            return ProcessWindows.DescribeWindowAt(point.X, point.Y);
+        }
+        catch (Exception ex)
+        {
+            return $"(couldn't get a clickable point: {ex.Message})";
+        }
+    }
+
+    /// <summary>
+    /// Right-clicks the element, waits for the popup ContextMenu, and clicks the item with the
+    /// given header text. The popup is found as a new top-level window of the app's process (by
+    /// HWND), since where UIA places a desktop-owned widget's popup in its tree varies by machine.
+    /// </summary>
     public static void ClickContextMenuItem(AutomationElement target, UIA3Automation automation, string header)
     {
+        var processId = target.Properties.ProcessId.Value;
+        var before = ProcessWindows.FindVisibleWpfWindows(processId).Select(w => w.Handle).ToHashSet();
+
+        RaiseForInput(target);
         target.RightClick();
 
-        var menu = Retry.WhileNull(
-            () => automation.GetDesktop().FindFirstChild(cf => cf.ByControlType(ControlType.Menu)),
-            DefaultTimeout).Result
-            ?? throw new InvalidOperationException("The context menu never appeared.");
-
         var item = Retry.WhileNull(
-            () => menu.FindFirstDescendant(cf => cf.ByName(header)),
-            TimeSpan.FromSeconds(2)).Result
-            ?? throw new InvalidOperationException($"Context menu item \"{header}\" wasn't found.");
+            () => ProcessWindows.FindVisibleWpfWindows(processId)
+                .Where(w => !before.Contains(w.Handle))
+                .Select(w => automation.FromHandle(w.Handle).FindFirstDescendant(cf =>
+                    cf.ByControlType(ControlType.MenuItem).And(cf.ByName(header))))
+                .FirstOrDefault(found => found is not null),
+            DefaultTimeout,
+            ignoreException: true).Result
+            ?? throw new InvalidOperationException(
+                $"Context menu item \"{header}\" never appeared. Window under the click point: " +
+                DescribeClickTarget(target) + ". Windows owned by the app process: " +
+                string.Join("; ", ProcessWindows.List(processId)));
 
         item.Click();
     }

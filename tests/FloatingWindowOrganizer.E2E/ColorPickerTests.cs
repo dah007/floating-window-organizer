@@ -29,11 +29,7 @@ public sealed class ColorPickerTests
 
         AppAutomation.ClickContextMenuItem(window, automation, "Color…");
 
-        var app = Application.Attach(process.Id);
-        var colorPicker = Retry.WhileNull(
-            () => app.GetAllTopLevelWindows(automation).FirstOrDefault(w => w.Title == "Widget color"),
-            TimeSpan.FromSeconds(5)).Result
-            ?? throw new InvalidOperationException("The color picker window never appeared.");
+        var colorPicker = AppAutomation.FindWindowByTitle(process, automation, "Widget color", TimeSpan.FromSeconds(5));
 
         var bluePreset = Retry.WhileNull(
             () => colorPicker.FindFirstDescendant(cf => cf.ByName("Blue")),
