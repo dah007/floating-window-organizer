@@ -70,17 +70,51 @@ internal static class AppAutomation
             lastError);
     }
 
+    /// <summary>
+    /// Raises the window containing <paramref name="element"/> above everything (without
+    /// activating it) so synthetic mouse input reaches it. Call before clicking a widget.
+    /// </summary>
+    public static void RaiseForInput(AutomationElement element)
+    {
+        for (var current = element; current is not null; current = current.Parent)
+        {
+            var hwnd = current.Properties.NativeWindowHandle.ValueOrDefault;
+            if (hwnd != IntPtr.Zero)
+            {
+                ProcessWindows.RaiseToTop(hwnd);
+                Thread.Sleep(100);
+                return;
+            }
+        }
+    }
+
+    /// <summary>Which window actually sits under the element's click point (for failure messages).</summary>
+    public static string DescribeClickTarget(AutomationElement element)
+    {
+        try
+        {
+            var point = element.GetClickablePoint();
+            return ProcessWindows.DescribeWindowAt(point.X, point.Y);
+        }
+        catch (Exception ex)
+        {
+            return $"(couldn't get a clickable point: {ex.Message})";
+        }
+    }
+
     /// <summary>Right-clicks the element, waits for the popup ContextMenu, and clicks the item
     /// with the given header text.</summary>
     public static void ClickContextMenuItem(AutomationElement target, UIA3Automation automation, string header)
     {
+        RaiseForInput(target);
         target.RightClick();
 
         var menu = Retry.WhileNull(
             () => automation.GetDesktop().FindFirstChild(cf => cf.ByControlType(ControlType.Menu)),
             DefaultTimeout,
             ignoreException: true).Result
-            ?? throw new InvalidOperationException("The context menu never appeared.");
+            ?? throw new InvalidOperationException(
+                "The context menu never appeared. Window under the click point: " + DescribeClickTarget(target));
 
         var item = Retry.WhileNull(
             () => menu.FindFirstDescendant(cf => cf.ByName(header)),

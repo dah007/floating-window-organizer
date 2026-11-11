@@ -49,6 +49,54 @@ internal static class ProcessWindows
         List(processId).Where(w =>
             w.Visible && w.Width > 0 && w.Height > 0 && w.ClassName.StartsWith("HwndWrapper", StringComparison.Ordinal));
 
+    /// <summary>
+    /// Raises a window above everything without activating it. The app deliberately keeps widgets
+    /// at the bottom of the Z-order (desktop layer), so on a CI runner other windows can cover them
+    /// and swallow synthetic mouse input. The app's next SendToBottom (HWND_BOTTOM) clears this.
+    /// </summary>
+    public static void RaiseToTop(IntPtr hwnd) =>
+        SetWindowPos(hwnd, HwndTopmost, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoActivate);
+
+    /// <summary>Describes the top-level window under a screen point, for failure messages.</summary>
+    public static string DescribeWindowAt(int x, int y)
+    {
+        var hwnd = WindowFromPoint(new Point { X = x, Y = y });
+        if (hwnd == IntPtr.Zero)
+        {
+            return $"({x},{y}): no window";
+        }
+
+        var root = GetAncestor(hwnd, GaRoot);
+        GetWindowThreadProcessId(root, out var pid);
+        var className = new StringBuilder(256);
+        GetClassName(root, className, className.Capacity);
+        var title = new StringBuilder(256);
+        GetWindowText(root, title, title.Capacity);
+        return $"({x},{y}): 0x{root:X} pid={pid} class={className} title=\"{title}\"";
+    }
+
+    private static readonly IntPtr HwndTopmost = new(-1);
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoActivate = 0x0010;
+    private const uint GaRoot = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Point
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr WindowFromPoint(Point point);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+
     private delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
 
     [StructLayout(LayoutKind.Sequential)]
