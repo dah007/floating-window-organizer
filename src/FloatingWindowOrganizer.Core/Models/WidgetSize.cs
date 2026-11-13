@@ -11,4 +11,7 @@ public enum WidgetSize
 
     /// <summary>4 x 4 grid.</summary>
     Large,
+
+    /// <summary>5 x 5 grid. Added last so saved settings keep their meaning.</summary>
+    ExtraLarge,
 }

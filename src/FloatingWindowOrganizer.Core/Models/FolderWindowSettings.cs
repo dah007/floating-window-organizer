@@ -27,4 +27,10 @@ public sealed class FolderWindowSettings
     /// Windows light/dark theme. An unreadable value is treated as null.
     /// </summary>
     public string? BackgroundColor { get; set; }
+
+    /// <summary>
+    /// True (the default, also for settings files saved before this existed) when the glossy glass
+    /// sheen is drawn over the widget. The sheen never takes mouse input.
+    /// </summary>
+    public bool GlossEnabled { get; set; } = true;
 }

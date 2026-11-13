@@ -137,9 +137,28 @@ public class ColorMathTests
     [Fact]
     public void PaletteForBackground_UsesTheColourAsTint()
     {
+        // The colour is kept; only its opacity may be raised so it holds its own over the wallpaper.
         var palette = WidgetPalette.ForBackground(0xB8FF9500);
 
-        Assert.Equal(0xB8FF9500u, palette.Tint);
+        Assert.Equal(0xFF9500u, palette.Tint & 0xFFFFFFu);
+        Assert.InRange(palette.Tint >> 24, 0xB8u, 0xFFu);
+        Assert.Equal(0xFFFF9500u, WidgetPalette.ForBackground(0xFFFF9500).Tint);
+    }
+
+    [Fact]
+    public void Mix_MovesTowardsTheTargetAndSetsAlpha()
+    {
+        Assert.Equal(0xFF808080u, ColorMath.Mix(0xFF000000, 0xFFFFFFFF, 0.5, 0xFF));
+        Assert.Equal(0x80FF0000u, ColorMath.Mix(0x00FF0000, 0xFF000000, 0, 0x80));
+        Assert.Equal(0xFF000000u, ColorMath.Mix(0xFFFF8800, 0xFF000000, 1, 0xFF));
+    }
+
+    [Fact]
+    public void PrefersDarkText_JudgesTranslucentColoursOverTheGivenBackdrop()
+    {
+        // Fully transparent: only the backdrop counts.
+        Assert.True(ColorMath.PrefersDarkText(0x00000000, 0xFFFFFFFF));
+        Assert.False(ColorMath.PrefersDarkText(0x00FFFFFF, 0xFF000000));
     }
 
     [Fact]

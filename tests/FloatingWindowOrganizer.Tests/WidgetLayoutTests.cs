@@ -9,6 +9,7 @@ public class WidgetLayoutTests
     [InlineData(WidgetSize.Small, 170, 170, 2, 2)]
     [InlineData(WidgetSize.Medium, 364, 170, 4, 2)]
     [InlineData(WidgetSize.Large, 364, 382, 4, 4)]
+    [InlineData(WidgetSize.ExtraLarge, 448, 465, 5, 5)]
     public void For_ReturnsIosStyleDimensions(WidgetSize size, double width, double height, int columns, int rows)
     {
         var dimensions = WidgetLayout.For(size);
@@ -20,6 +21,7 @@ public class WidgetLayoutTests
     [InlineData(WidgetSize.Small, 4)]
     [InlineData(WidgetSize.Medium, 8)]
     [InlineData(WidgetSize.Large, 16)]
+    [InlineData(WidgetSize.ExtraLarge, 25)]
     public void Capacity_IsColumnsTimesRows(WidgetSize size, int expected)
     {
         Assert.Equal(expected, WidgetLayout.For(size).Capacity);
@@ -29,6 +31,7 @@ public class WidgetLayoutTests
     [InlineData(WidgetSize.Small)]
     [InlineData(WidgetSize.Medium)]
     [InlineData(WidgetSize.Large)]
+    [InlineData(WidgetSize.ExtraLarge)]
     public void HeightFor_Collapsed_IsTitleRowHeightForEverySize(WidgetSize size)
     {
         Assert.Equal(WidgetLayout.CollapsedHeight, WidgetLayout.HeightFor(size, isCollapsed: true));
@@ -38,6 +41,7 @@ public class WidgetLayoutTests
     [InlineData(WidgetSize.Small)]
     [InlineData(WidgetSize.Medium)]
     [InlineData(WidgetSize.Large)]
+    [InlineData(WidgetSize.ExtraLarge)]
     public void HeightFor_Expanded_IsFullWidgetHeight(WidgetSize size)
     {
         Assert.Equal(WidgetLayout.For(size).Height, WidgetLayout.HeightFor(size, isCollapsed: false));
@@ -47,6 +51,7 @@ public class WidgetLayoutTests
     [InlineData(WidgetSize.Small)]
     [InlineData(WidgetSize.Medium)]
     [InlineData(WidgetSize.Large)]
+    [InlineData(WidgetSize.ExtraLarge)]
     public void CollapsedHeight_IsSmallerThanEveryExpandedSize(WidgetSize size)
     {
         Assert.True(WidgetLayout.CollapsedHeight < WidgetLayout.For(size).Height);
@@ -113,5 +118,22 @@ public class WidgetLayoutTests
     public void Fit_CapacityBelowOne_Throws(int capacity)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => WidgetLayout.Fit(new[] { "a" }, capacity));
+    }
+
+    [Fact]
+    public void ExtraLarge_KeepsLargeTileCellSize()
+    {
+        // Border + padding: 30 across, 26 down, plus the 24-high title row.
+        static (double W, double H) Cell(WidgetSize size)
+        {
+            var d = WidgetLayout.For(size);
+            return ((d.Width - 30) / d.Columns, (d.Height - 26 - 24) / d.Rows);
+        }
+
+        var large = Cell(WidgetSize.Large);
+        var extraLarge = Cell(WidgetSize.ExtraLarge);
+
+        Assert.InRange(extraLarge.W, large.W - 0.5, large.W + 0.5);
+        Assert.InRange(extraLarge.H, large.H - 0.5, large.H + 0.5);
     }
 }
