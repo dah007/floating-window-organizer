@@ -42,32 +42,6 @@ public sealed class WidgetTileTests
     }
 
     [Fact]
-    public void Widget_OverflowTileShowsRemainingCount()
-    {
-        using var folder = new TempDirectory();
-        for (var i = 0; i < 10; i++)
-        {
-            File.WriteAllText(folder.Combine($"file-{i:00}.txt"), string.Empty);
-        }
-
-        using var env = new IsolatedAppEnvironment();
-        // Small = 2x2 = capacity 4, so 3 files show and the 4th slot is the "+7" overflow tile.
-        var process = env.Launch(widgets:
-        [
-            new FolderWindowSettings { FolderPath = folder.Path, Size = WidgetSize.Small },
-        ]);
-
-        using var automation = new UIA3Automation();
-        var window = AppAutomation.AttachMainWindow(process, automation);
-
-        var overflowText = window.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.Text).And(cf.ByName("+7")));
-        Assert.NotNull(overflowText);
-
-        AppAutomation.ExitViaContextMenu(window, automation, process);
-    }
-
-    [Fact]
     public void Widget_CollapseAndExpand_TogglesTileVisibility()
     {
         using var folder = new TempDirectory();

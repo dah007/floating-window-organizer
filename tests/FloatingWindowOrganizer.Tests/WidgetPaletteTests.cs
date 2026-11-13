@@ -84,7 +84,8 @@ public sealed class WidgetPaletteTests
 
         Assert.Equal(WidgetPalette.Dark.Gloss, palette.Gloss);
         Assert.Equal(WidgetPalette.Dark.GlossVeil, palette.GlossVeil);
-        Assert.Equal(WidgetPalette.Dark.GlossRim, palette.GlossRim);
+        // The edge is a shade of this widget's own colour, not the dark theme's graphite.
+        Assert.Equal(ColorMath.Mix(argb, 0xFFFFFFFF, 0.40, WidgetPalette.EdgeAlpha), palette.GlossRim);
         Assert.Equal(WidgetPalette.Dark.Text, palette.Text);
         Assert.Equal(argb, palette.Tint); // opaque colours keep their exact value
     }
