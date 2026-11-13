@@ -23,6 +23,10 @@ public partial class FolderWindow : Window
     public static readonly DependencyProperty GridRowsProperty = DependencyProperty.Register(
         nameof(GridRows), typeof(int), typeof(FolderWindow), new PropertyMetadata(2));
 
+    /// <summary>True when the glossy glass layers are drawn (the card, its rim and each tile bind to it).</summary>
+    public static readonly DependencyProperty IsGlossyProperty = DependencyProperty.Register(
+        nameof(IsGlossy), typeof(bool), typeof(FolderWindow), new PropertyMetadata(true));
+
     private static readonly Duration CollapseAnimationDuration = TimeSpan.FromMilliseconds(200);
 
     private readonly App _host;
@@ -49,6 +53,7 @@ public partial class FolderWindow : Window
         ApplySize();
         KeepOnScreen();
         ApplyColor(SavedColor);
+        ApplyGloss();
         LoadFolder();
     }
 
@@ -70,6 +75,12 @@ public partial class FolderWindow : Window
         set => SetValue(GridRowsProperty, value);
     }
 
+    public bool IsGlossy
+    {
+        get => (bool)GetValue(IsGlossyProperty);
+        set => SetValue(IsGlossyProperty, value);
+    }
+
     private IntPtr Handle => new WindowInteropHelper(this).Handle;
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -77,8 +88,10 @@ public partial class FolderWindow : Window
         base.OnSourceInitialized(e);
 
         DesktopAttachment.Attach(Handle);
-        WindowEffects.EnableBlurBehind(Handle);
-        UpdateRoundedRegion(Width, Height);
+
+        // No Windows blur and no window region: the blur filled the window's whole rectangle on
+        // Windows 11, and a region clips without anti-aliasing (jagged corners). The window is
+        // per-pixel transparent, so WPF's own smooth rounded card is the shape people see.
     }
 
     protected override void OnContentRendered(EventArgs e)
@@ -87,20 +100,6 @@ public partial class FolderWindow : Window
 
         // Show() puts a new window on top of everything; push it back down to the desktop layer.
         DesktopAttachment.SendToBottom(Handle);
-    }
-
-    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
-    {
-        base.OnDpiChanged(oldDpi, newDpi);
-        UpdateRoundedRegion(ActualWidth, ActualHeight);
-    }
-
-    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
-    {
-        base.OnRenderSizeChanged(sizeInfo);
-
-        // Keeps the rounded clip in step with the size, including every frame of the collapse animation.
-        UpdateRoundedRegion(sizeInfo.NewSize.Width, sizeInfo.NewSize.Height);
     }
 
     private void ApplySize()
@@ -114,11 +113,9 @@ public partial class FolderWindow : Window
         GridColumns = dimensions.Columns;
         GridRows = dimensions.Rows;
 
-        // Content area = expanded height minus the card's border (1 + 1) and padding (12 + 12).
+        // Content area = expanded height minus the card's border (2 + 2) and padding (11 + 11).
         ContentPanel.Height = dimensions.Height - WidgetLayout.CollapsedHeight + TitleRow.Height;
         Tiles.Visibility = Settings.IsCollapsed ? Visibility.Collapsed : Visibility.Visible;
-
-        UpdateRoundedRegion(Width, Height);
     }
 
     private void SetCollapsed(bool collapse)
@@ -180,22 +177,6 @@ public partial class FolderWindow : Window
             SystemParameters.VirtualScreenWidth,
             SystemParameters.VirtualScreenHeight);
         (Left, Top) = WindowPlacement.EnsureVisible(Settings.Left, Settings.Top, Width, Height, desktop);
-    }
-
-    private void UpdateRoundedRegion(double width, double height)
-    {
-        var hwnd = Handle;
-        if (hwnd == IntPtr.Zero)
-        {
-            return; // Not created yet; OnSourceInitialized will apply it.
-        }
-
-        var dpi = VisualTreeHelper.GetDpi(this);
-        WindowEffects.SetRoundedRegion(
-            hwnd,
-            (int)Math.Ceiling(width * dpi.DpiScaleX),
-            (int)Math.Ceiling(height * dpi.DpiScaleY),
-            (int)Math.Round(WidgetLayout.CornerRadius * 2 * dpi.DpiScaleX));
     }
 
     private void LoadFolder()
@@ -342,7 +323,9 @@ public partial class FolderWindow : Window
         SizeSmallItem.IsChecked = Settings.Size == WidgetSize.Small;
         SizeMediumItem.IsChecked = Settings.Size == WidgetSize.Medium;
         SizeLargeItem.IsChecked = Settings.Size == WidgetSize.Large;
+        SizeExtraLargeItem.IsChecked = Settings.Size == WidgetSize.ExtraLarge;
         CollapseItem.Header = Settings.IsCollapsed ? "Expand" : "Collapse";
+        GlossItem.IsChecked = Settings.GlossEnabled;
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e) => LoadFolder();
@@ -434,18 +417,36 @@ public partial class FolderWindow : Window
         DesktopAttachment.SendToBottom(Handle);
     }
 
-    /// <summary>A custom colour gets this window's own brushes; null falls back to the theme's.</summary>
+    /// <summary>
+    /// A custom colour gets this window's own brushes, worked out against the wallpaper's average colour
+    /// so the text reads on any colour; null falls back to the theme's.
+    /// </summary>
     private void ApplyColor(uint? argb)
     {
         if (argb is { } color)
         {
-            WidgetTheme.Apply(Resources, WidgetPalette.ForBackground(color));
+            WidgetTheme.Apply(Resources, WidgetPalette.ForBackground(color, _host.WallpaperColor));
         }
         else
         {
             WidgetTheme.Clear(Resources);
         }
     }
+
+    // ---- Glossy sheen ----
+
+    private void Gloss_Click(object sender, RoutedEventArgs e)
+    {
+        Settings.GlossEnabled = !Settings.GlossEnabled;
+        ApplyGloss();
+        _host.SaveSettings();
+    }
+
+    /// <summary>Shows or hides the glass layers. They are never hit-testable, so they can't swallow clicks either way.</summary>
+    private void ApplyGloss() => IsGlossy = Settings.GlossEnabled;
+
+    /// <summary>Re-works out a custom colour, e.g. after the wallpaper changed.</summary>
+    internal void RefreshColor() => ApplyColor(SavedColor);
 
     private void ToggleCollapsed_Click(object sender, RoutedEventArgs e) => SetCollapsed(!Settings.IsCollapsed);
 

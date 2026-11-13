@@ -78,6 +78,19 @@ public static class ColorMath
     public static (byte A, byte R, byte G, byte B) Split(uint argb) =>
         ((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
 
+    /// <summary>
+    /// <paramref name="argb"/>'s colour moved <paramref name="amount"/> (0 to 1) of the way towards
+    /// <paramref name="target"/>'s, with the given alpha. Used for shades: towards black darkens, towards white lightens.
+    /// </summary>
+    public static uint Mix(uint argb, uint target, double amount, byte alpha)
+    {
+        amount = Math.Clamp(amount, 0, 1);
+        var (_, r, g, b) = Split(argb);
+        var (_, tr, tg, tb) = Split(target);
+        byte Towards(byte from, byte to) => (byte)Math.Round(from + ((to - from) * amount));
+        return ToArgb(alpha, Towards(r, tr), Towards(g, tg), Towards(b, tb));
+    }
+
     /// <summary>"#AARRGGBB", the form saved in settings.json.</summary>
     public static string ToArgbHex(uint argb) => "#" + argb.ToString("X8", CultureInfo.InvariantCulture);
 
@@ -131,13 +144,21 @@ public static class ColorMath
     /// True when dark widget text reads better than white on this background. A translucent
     /// colour is judged as if over a mid-grey wallpaper.
     /// </summary>
-    public static bool PrefersDarkText(uint argb)
+    public static bool PrefersDarkText(uint argb) =>
+        PrefersDarkText(argb, ToArgb(0xFF, AssumedBackdrop, AssumedBackdrop, AssumedBackdrop));
+
+    /// <summary>
+    /// True when dark widget text reads better than white on this background, with a translucent
+    /// colour judged as blended over <paramref name="backdrop"/> (the wallpaper's colour; its alpha is ignored).
+    /// </summary>
+    public static bool PrefersDarkText(uint argb, uint backdrop)
     {
         var (a, r, g, b) = Split(argb);
+        var (_, br, bg, bb) = Split(backdrop);
         var alpha = a / 255.0;
-        byte Over(byte channel) => (byte)Math.Round((channel * alpha) + (AssumedBackdrop * (1 - alpha)));
+        byte Over(byte channel, byte under) => (byte)Math.Round((channel * alpha) + (under * (1 - alpha)));
 
-        var background = RelativeLuminance(Over(r), Over(g), Over(b));
+        var background = RelativeLuminance(Over(r, br), Over(g, bg), Over(b, bb));
         var (_, dr, dg, db) = Split(DarkText);
         var (_, lr, lg, lb) = Split(LightText);
 

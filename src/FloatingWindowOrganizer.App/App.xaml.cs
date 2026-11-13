@@ -32,6 +32,12 @@ public partial class App : Application
 
     internal bool WidgetsHidden => _settings.WidgetsHidden;
 
+    /// <summary>
+    /// Average colour of the desktop wallpaper (0xFFRRGGBB), or null when it can't be read. Widgets with a
+    /// custom colour use it to pick their text colour and glass opacity.
+    /// </summary>
+    internal uint? WallpaperColor { get; private set; }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -47,6 +53,7 @@ public partial class App : Application
         }
 
         WidgetTheme.Apply(Resources);
+        WallpaperColor = Wallpaper.AverageColor();
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
 
         var settingsPath = SettingsPaths.GetDefaultSettingsFilePath();
@@ -229,6 +236,19 @@ public partial class App : Application
         if (e.Category is UserPreferenceCategory.General or UserPreferenceCategory.Color or UserPreferenceCategory.VisualStyle)
         {
             Dispatcher.InvokeAsync(() => WidgetTheme.Apply(Resources));
+        }
+
+        // A new wallpaper (or solid desktop colour) changes what custom-coloured glass sits on.
+        if (e.Category is UserPreferenceCategory.Desktop or UserPreferenceCategory.Color)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                WallpaperColor = Wallpaper.AverageColor();
+                foreach (var widget in _widgets)
+                {
+                    widget.RefreshColor();
+                }
+            });
         }
     }
 }

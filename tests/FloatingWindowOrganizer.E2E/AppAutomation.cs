@@ -107,7 +107,7 @@ internal static class AppAutomation
     /// given header text. The popup is found as a new top-level window of the app's process (by
     /// HWND), since where UIA places a desktop-owned widget's popup in its tree varies by machine.
     /// </summary>
-    public static void ClickContextMenuItem(AutomationElement target, UIA3Automation automation, string header)
+    public static void ClickContextMenuItem(AutomationElement target, UIA3Automation automation, string header, bool invoke = false)
     {
         var processId = target.Properties.ProcessId.Value;
         var before = ProcessWindows.FindVisibleWpfWindows(processId).Select(w => w.Handle).ToHashSet();
@@ -128,14 +128,34 @@ internal static class AppAutomation
                 DescribeClickTarget(target) + ". Windows owned by the app process: " +
                 string.Join("; ", ProcessWindows.List(processId)));
 
-        item.Click();
+        // invoke: use UI Automation's Invoke instead of a mouse click. A click goes to whatever is under
+        // the point by the time the mouse arrives (a menu still sliding open, or a submenu such as Size
+        // that opened while the pointer passed over it), so it can miss. Only for items that don't open a
+        // modal dialog: Invoke may not return until such a dialog closes.
+        if (invoke && item.Patterns.Invoke.IsSupported)
+        {
+            try
+            {
+                item.Patterns.Invoke.Pattern.Invoke();
+            }
+            catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or TimeoutException
+                                           or FlaUI.Core.Exceptions.ElementNotAvailableException)
+            {
+                // The item's action (Exit) can close the app before UI Automation hears back. The
+                // caller checks the outcome itself, e.g. by waiting for the process to exit.
+            }
+        }
+        else
+        {
+            item.Click();
+        }
     }
 
     /// <summary>Opens the widget's context menu and clicks Exit, then waits for the process to
     /// exit cleanly so every E2E test ends with a full, self-contained app lifecycle.</summary>
     public static void ExitViaContextMenu(AutomationElement target, UIA3Automation automation, Process process)
     {
-        ClickContextMenuItem(target, automation, "Exit");
+        ClickContextMenuItem(target, automation, "Exit", invoke: true);
 
         var exited = process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
         if (!exited)

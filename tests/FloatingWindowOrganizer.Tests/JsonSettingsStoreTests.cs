@@ -68,6 +68,37 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public void NewWidget_HasGlossEnabled()
+    {
+        Assert.True(new FolderWindowSettings().GlossEnabled);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SaveThenLoad_RoundTripsGlossEnabled(bool gloss)
+    {
+        var store = new JsonSettingsStore(_temp.Combine("settings.json"));
+
+        store.Save(new AppSettings { Windows = [new FolderWindowSettings { GlossEnabled = gloss }] });
+
+        Assert.Equal(gloss, Assert.Single(store.Load().Windows).GlossEnabled);
+    }
+
+    [Fact]
+    public void Load_SettingsFileFromBeforeGloss_DefaultsToGlossEnabled()
+    {
+        var path = _temp.Combine("settings.json");
+        File.WriteAllText(path, """
+            { "SchemaVersion": 1, "Windows": [ { "FolderPath": "C:\\Temp", "Left": 10, "Top": 20 } ] }
+            """);
+
+        var loaded = Assert.Single(new JsonSettingsStore(path).Load().Windows);
+
+        Assert.True(loaded.GlossEnabled);
+    }
+
+    [Fact]
     public void WidgetsHidden_DefaultsToFalse()
     {
         Assert.False(new AppSettings().WidgetsHidden);

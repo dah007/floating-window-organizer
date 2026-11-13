@@ -11,6 +11,8 @@
         ShowActivated="False">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleWhenTrue" />
+
         <!-- Rename box: fits the 18 px title row and looks like the title, on a faint tile. -->
         <Style x:Key="TitleEditorStyle" TargetType="TextBox">
             <Setter Property="FontSize" Value="13" />
@@ -30,12 +32,13 @@
         </Style>
     </Window.Resources>
 
+    <Grid>
     <Border x:Name="Card"
             CornerRadius="22"
             Background="{DynamicResource WidgetTintBrush}"
             BorderBrush="{DynamicResource WidgetBorderBrush}"
-            BorderThickness="1"
-            Padding="14,12,14,12"
+            BorderThickness="2"
+            Padding="13,11,13,11"
             MouseLeftButtonDown="Card_MouseLeftButtonDown"
             MouseMove="Card_MouseMove"
             MouseLeftButtonUp="Card_MouseLeftButtonUp">
@@ -49,10 +52,12 @@
                 <MenuItem Header="Change folder…" Click="ChangeFolder_Click" />
                 <MenuItem Header="Rename" Click="Rename_Click" />
                 <MenuItem Header="Color…" Click="Color_Click" />
+                <MenuItem x:Name="GlossItem" Header="Glossy" IsCheckable="True" Click="Gloss_Click" />
                 <MenuItem Header="Size">
                     <MenuItem x:Name="SizeSmallItem" Header="Small" Tag="Small" IsCheckable="True" Click="Size_Click" />
                     <MenuItem x:Name="SizeMediumItem" Header="Medium" Tag="Medium" IsCheckable="True" Click="Size_Click" />
                     <MenuItem x:Name="SizeLargeItem" Header="Large" Tag="Large" IsCheckable="True" Click="Size_Click" />
+                    <MenuItem x:Name="SizeExtraLargeItem" Header="Extra large" Tag="ExtraLarge" IsCheckable="True" Click="Size_Click" />
                 </MenuItem>
                 <Separator />
                 <MenuItem Header="Add widget…" Click="AddWidget_Click" />
@@ -62,6 +67,17 @@
                 <MenuItem Header="Exit" Click="Exit_Click" />
             </ContextMenu>
         </Border.ContextMenu>
+
+        <Grid>
+        <!-- Glossy glass, under the content and over the tint (see WidgetPalette for the recipe). The
+             negative margin cancels the card padding so the layers reach the card's inner edge. Purely
+             decorative: never hit-testable, so clicks, drags and double-clicks reach the card. -->
+        <Grid x:Name="Gloss" Margin="-13,-11" IsHitTestVisible="False" Focusable="False"
+              Visibility="{Binding IsGlossy, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleWhenTrue}}">
+            <Border CornerRadius="20" Background="{DynamicResource WidgetGlossVeilBrush}" />
+            <Border CornerRadius="20" Background="{DynamicResource WidgetGlossBrush}" />
+            <Border CornerRadius="20" Background="{DynamicResource WidgetGlossStreakBrush}" />
+        </Grid>
 
         <!-- Fixed to the expanded content height (set in code) and top-aligned, so while the widget
              collapses the tiles are clipped rather than squashed. -->
@@ -102,18 +118,25 @@
                         <!-- Transparent background so the whole cell is hit-testable for double-click. -->
                         <Grid Background="Transparent" ToolTip="{Binding TargetPath}">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="40" Height="40" CornerRadius="10" HorizontalAlignment="Center">
+                                <Border Width="40" Height="40" CornerRadius="10" BorderThickness="1" HorizontalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="{DynamicResource WidgetTileBrush}" />
+                                            <Setter Property="BorderBrush" Value="Transparent" />
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter Property="Background" Value="{DynamicResource WidgetTileHoverBrush}" />
                                                 </Trigger>
+                                                <DataTrigger Binding="{Binding IsGlossy, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource WidgetTileEdgeBrush}" />
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
                                     <Grid>
+                                        <!-- The tile's own small glare (glossy only). -->
+                                        <Border CornerRadius="9" Background="{DynamicResource WidgetTileGlossBrush}" IsHitTestVisible="False"
+                                                Visibility="{Binding IsGlossy, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleWhenTrue}}" />
                                         <Image Source="{Binding Icon}"
                                                Width="32"
                                                Height="32"
@@ -139,5 +162,12 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </DockPanel>
+        </Grid>
     </Border>
+
+    <!-- Glossy edge over the card's own 2 px border: a lighter shade of the tint along the top, a darker one along the bottom. -->
+    <Border x:Name="GlossRim" CornerRadius="22" BorderThickness="2" IsHitTestVisible="False" Focusable="False"
+            BorderBrush="{DynamicResource WidgetGlossRimBrush}"
+            Visibility="{Binding IsGlossy, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource VisibleWhenTrue}}" />
+    </Grid>
 </Window>
